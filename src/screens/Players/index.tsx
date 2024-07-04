@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { FlatList } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { Alert, FlatList, TextInput } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 
 import { Header } from '@components/Header';
@@ -9,19 +9,66 @@ import { Input } from '@components/Input';
 import { Filter } from '@components/Filter';
 import { PlayerCard } from '@components/PlayerCard';
 import { ListEmpty } from '@components/ListEmpty';
-import { Container, Form, HeaderList, NumberOfPlayers } from './styles';
 import { Button } from '@components/Button';
+import { Container, Form, HeaderList, NumberOfPlayers } from './styles';
+
+import { playerAddByGroup } from '@storage/player/playerAddByGroup';
+import { AppError } from '@utils/AppError';
+import { playerGetByGroupAndTeam } from '@storage/player/playerGetByGroupAndTeam';
+import { PlayerStorageDTO } from '@storage/player/playerStorageDTO';
 
 type RouteParams = {
   group: string;
 }
 
 export const Players = () => {
-  const [team, setTeam] = useState('');
-  const [players, setPlayers] = useState([]);
+  const [newPlayerName, setNewPlayerName] = useState('');
+  const [team, setTeam] = useState('Time A');
+  const [players, setPlayers] = useState<PlayerStorageDTO[]>([]);
 
   const route = useRoute();
   const { group } = route.params as RouteParams;
+
+  const newPlayerNameInputRef = useRef<TextInput>(null);
+
+  async function handleAddPlayer() {
+    if (newPlayerName.trim().length === 0) {
+      return Alert.alert('Novo Jogador', 'Informe o nome do jogador para adicionar.');
+    }
+
+    const newPlayer = {
+      name: newPlayerName,
+      team
+    }
+
+    try {
+      await playerAddByGroup(newPlayer, group);
+      newPlayerNameInputRef.current?.blur();
+      setNewPlayerName('');
+      fetchPlayersByTeam();
+    } catch (error) {
+      if (error instanceof AppError) {
+        Alert.alert('Nova Pessoa', error.message);
+      } else {
+        Alert.alert('Nova Pessoa', 'Não foi possível adicionar o jogador.');
+        console.log(error);
+      }
+    }
+  }
+
+  async function fetchPlayersByTeam() {
+    try {
+      const playersByTeam = await playerGetByGroupAndTeam(group, team);
+      setPlayers(playersByTeam);
+    } catch (error) {
+      console.log(error);
+      Alert.alert('Pessoas', 'Não foi possível carregar os jogadores do time selecionado.');
+    }
+  }
+
+  useEffect(() => {
+    fetchPlayersByTeam();
+  }, [team]);
 
   return (
     <Container>
@@ -32,10 +79,15 @@ export const Players = () => {
       />
       <Form>
         <Input
+          inputRef={newPlayerNameInputRef}
           placeholder='Nome da pessoa'
           autoCorrect={false}
+          onChangeText={setNewPlayerName}
+          value={newPlayerName}
+          onSubmitEditing={handleAddPlayer}
+          returnKeyType='done'
         />
-        <ButtonIcon icon='add' />
+        <ButtonIcon icon='add' onPress={handleAddPlayer} />
       </Form>
       <HeaderList>
         <FlatList
@@ -56,10 +108,10 @@ export const Players = () => {
       </HeaderList>
       <FlatList
         data={players}
-        keyExtractor={item => item}
+        keyExtractor={item => item.name}
         renderItem={({ item }) => (
           <PlayerCard
-            name={item}
+            name={item.name}
             onRemove={() => { }}
           />
         )}
