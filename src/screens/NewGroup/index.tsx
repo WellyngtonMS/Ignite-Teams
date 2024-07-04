@@ -5,7 +5,7 @@ import { Header } from '@components/Header';
 import { Highlight } from '@components/Highlight';
 import { Button } from '@components/Button';
 import { Input } from '@components/Input';
-import { Alert } from 'react-native';
+import { Alert, Platform, KeyboardAvoidingView } from 'react-native';
 import { groupCreate } from '@storage/group/groupCreate';
 import { AppError } from '@utils/AppError';
 
@@ -32,25 +32,29 @@ export function NewGroup() {
   }
 
   return (
-    <Container>
-      <Header showBackButton />
+    <KeyboardAvoidingView style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <Container>
+        <Header showBackButton />
 
-      <Content>
-        <Icon />
-        <Highlight
-          title='Nova Turma'
-          subtitle='Crie uma nova turma para adicionar membros.'
-        />
-        <Input 
-          placeholder='Nome da turma'
-          onChangeText={setGroup}
-        />
-        <Button
-          title='Criar'
-          style={{ marginTop: 20 }}
-          onPress={handleNewGroup}
+        <Content>
+          <Icon />
+          <Highlight
+            title='Nova Turma'
+            subtitle='Crie uma nova turma para adicionar membros.'
           />
-      </Content>
-    </Container>
+          <Input 
+            placeholder='Nome da turma'
+            onChangeText={setGroup}
+          />
+          <Button
+            title='Criar'
+            style={{ marginTop: 20 }}
+            onPress={handleNewGroup}
+            />
+        </Content>
+      </Container>
+    </KeyboardAvoidingView>
   );
 }

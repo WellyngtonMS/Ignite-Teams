@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Alert, FlatList, TextInput } from 'react-native';
+import { Alert, FlatList, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 
 import { Header } from '@components/Header';
@@ -93,76 +93,80 @@ export const Players = () => {
   }, [team]);
 
   return (
-    <Container>
-      <Header showBackButton />
-      <Highlight
-        title={group}
-        subtitle='Adicione a galera e separe os times'
-      />
-      <Form>
-        <Input
-          inputRef={newPlayerNameInputRef}
-          placeholder='Nome da pessoa'
-          autoCorrect={false}
-          onChangeText={setNewPlayerName}
-          value={newPlayerName}
-          onSubmitEditing={handleAddPlayer}
-          returnKeyType='done'
+    <KeyboardAvoidingView style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <Container>
+        <Header showBackButton />
+        <Highlight
+          title={group}
+          subtitle='Adicione a galera e separe os times'
         />
-        <ButtonIcon icon='add' onPress={handleAddPlayer} style={{ position: 'absolute', right: 0 }} />
-      </Form>
-      <HeaderList>
+        <Form>
+          <Input
+            inputRef={newPlayerNameInputRef}
+            placeholder='Nome da pessoa'
+            autoCorrect={false}
+            onChangeText={setNewPlayerName}
+            value={newPlayerName}
+            onSubmitEditing={handleAddPlayer}
+            returnKeyType='done'
+          />
+          <ButtonIcon icon='add' onPress={handleAddPlayer} style={{ position: 'absolute', right: 0 }} />
+        </Form>
+        <HeaderList>
+          <FlatList
+            data={['Time A', 'Time B']}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+              <Filter
+                title={item}
+                isActive={team === item}
+                onPress={() => setTeam(item)}
+              />
+            )}
+            horizontal
+          />
+          <NumberOfPlayers>
+            {players.length}
+          </NumberOfPlayers>
+        </HeaderList>
         <FlatList
-          data={['Time A', 'Time B']}
-          keyExtractor={(item, index) => index.toString()}
+          data={players}
+          keyExtractor={item => item.name}
           renderItem={({ item }) => (
-            <Filter
-              title={item}
-              isActive={team === item}
-              onPress={() => setTeam(item)}
+            <PlayerCard
+              name={item.name}
+              onRemove={() => {
+                Alert.alert('Remover Jogador', `Deseja remover o jogador ${item.name}?`, [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { text: 'Remover', onPress: () => handlePlayerRemove(item.name), style: 'destructive' },
+                ]);
+              }}
             />
           )}
-          horizontal
+          ListEmptyComponent={() => (
+            <ListEmpty
+              message='Não há jogadores neste time'
+            />
+          )}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            { paddingBottom: 70 },
+            players.length === 0 && { flex: 1 }
+          ]}
         />
-        <NumberOfPlayers>
-          {players.length}
-        </NumberOfPlayers>
-      </HeaderList>
-      <FlatList
-        data={players}
-        keyExtractor={item => item.name}
-        renderItem={({ item }) => (
-          <PlayerCard
-            name={item.name}
-            onRemove={() => {
-              Alert.alert('Remover Jogador', `Deseja remover o jogador ${item.name}?`, [
-                { text: 'Cancelar', style: 'cancel' },
-                { text: 'Remover', onPress: () => handlePlayerRemove(item.name), style: 'destructive' },
-              ]);
-            }}
-          />
-        )}
-        ListEmptyComponent={() => (
-          <ListEmpty
-            message='Não há jogadores neste time'
-          />
-        )}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          { paddingBottom: 70 },
-          players.length === 0 && { flex: 1 }
-        ]}
-      />
-      <Button
-        title='Remover Turma'
-        type='SECONDARY'
-        onPress={() => {
-          Alert.alert('Remover Grupo', `Deseja remover o grupo ${group}?`, [
-            { text: 'Cancelar', style: 'cancel' },
-            { text: 'Remover', onPress: () => handleGroupRemove(), style: 'destructive' },
-          ]);
-        }}
-      />
-    </Container>
+        <Button
+          title='Remover Turma'
+          type='SECONDARY'
+          onPress={() => {
+            Alert.alert('Remover Grupo', `Deseja remover o grupo ${group}?`, [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Remover', onPress: () => handleGroupRemove(), style: 'destructive' },
+            ]);
+          }}
+        />
+      </Container>
+    </KeyboardAvoidingView>
   );
 };
