@@ -109,7 +109,7 @@ export const Players = () => {
           onSubmitEditing={handleAddPlayer}
           returnKeyType='done'
         />
-        <ButtonIcon icon='add' onPress={handleAddPlayer} />
+        <ButtonIcon icon='add' onPress={handleAddPlayer} style={{ position: 'absolute', right: 0 }} />
       </Form>
       <HeaderList>
         <FlatList
