@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Alert, FlatList, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
+import { Alert, FlatList, TextInput, Platform, KeyboardAvoidingView, RefreshControl } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { useTheme } from 'styled-components/native';
 
 import { Header } from '@components/Header';
 import { ButtonIcon } from '@components/ButtonIcon';
@@ -24,6 +25,8 @@ type RouteParams = {
 }
 
 export const Players = () => {
+  const { COLORS } = useTheme();
+  const [isLoading, setIsLoading] = useState(true);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [team, setTeam] = useState('Time A');
   const [players, setPlayers] = useState<PlayerStorageDTO[]>([]);
@@ -36,7 +39,7 @@ export const Players = () => {
 
   async function handleAddPlayer() {
     if (newPlayerName.trim().length === 0) {
-      return Alert.alert('Novo Jogador', 'Informe o nome do jogador para adicionar.');
+      return Alert.alert('Nova Pessoa', 'Informe o nome da pessoa para adicionar.');
     }
 
     const newPlayer = {
@@ -53,7 +56,7 @@ export const Players = () => {
       if (error instanceof AppError) {
         Alert.alert('Nova Pessoa', error.message);
       } else {
-        Alert.alert('Nova Pessoa', 'Não foi possível adicionar o jogador.');
+        Alert.alert('Nova Pessoa', 'Não foi possível adicionar a pessoa.');
         console.log(error);
       }
     }
@@ -61,11 +64,14 @@ export const Players = () => {
 
   async function fetchPlayersByTeam() {
     try {
+      setIsLoading(true);
       const playersByTeam = await playerGetByGroupAndTeam(group, team);
       setPlayers(playersByTeam);
     } catch (error) {
       console.log(error);
-      Alert.alert('Pessoas', 'Não foi possível carregar os jogadores do time selecionado.');
+      Alert.alert('Pessoas', 'Não foi possível carregar as pessoas do time selecionado.');
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -75,7 +81,7 @@ export const Players = () => {
       fetchPlayersByTeam();
     } catch (error) {
       console.log(error);
-      Alert.alert('Remover Jogador', 'Não foi possível remover o jogador selecionado.');
+      Alert.alert('Remover Pessoa', 'Não foi possível remover a pessoa selecionado.');
     }
   }
 
@@ -85,7 +91,7 @@ export const Players = () => {
       navigation.navigate('groups');
     } catch (error) {
       console.log(error);
-      Alert.alert('Remover grupo', 'Não foi possível remover o grupo.');
+      Alert.alert('Remover Turma', 'Não foi possível remover o grupo.');
     }
   }
   useEffect(() => {
@@ -131,6 +137,7 @@ export const Players = () => {
             {players.length}
           </NumberOfPlayers>
         </HeaderList>
+
         <FlatList
           data={players}
           keyExtractor={item => item.name}
@@ -138,7 +145,7 @@ export const Players = () => {
             <PlayerCard
               name={item.name}
               onRemove={() => {
-                Alert.alert('Remover Jogador', `Deseja remover o jogador ${item.name}?`, [
+                Alert.alert('Remover Pessoa', `Deseja remover a pessoa ${item.name}?`, [
                   { text: 'Cancelar', style: 'cancel' },
                   { text: 'Remover', onPress: () => handlePlayerRemove(item.name), style: 'destructive' },
                 ]);
@@ -147,7 +154,7 @@ export const Players = () => {
           )}
           ListEmptyComponent={() => (
             <ListEmpty
-              message='Não há jogadores neste time'
+              message='Não há pessoas neste time'
             />
           )}
           showsVerticalScrollIndicator={false}
@@ -155,12 +162,20 @@ export const Players = () => {
             { paddingBottom: 70 },
             players.length === 0 && { flex: 1 }
           ]}
+          refreshControl={
+            <RefreshControl
+              colors={[COLORS.GREEN_500]}
+              tintColor={COLORS.GREEN_500}
+              refreshing={isLoading}
+              onRefresh={fetchPlayersByTeam}
+            />
+          }
         />
         <Button
           title='Remover Turma'
           type='SECONDARY'
           onPress={() => {
-            Alert.alert('Remover Grupo', `Deseja remover o grupo ${group}?`, [
+            Alert.alert('Remover Turma', `Deseja remover a turma ${group}?`, [
               { text: 'Cancelar', style: 'cancel' },
               { text: 'Remover', onPress: () => handleGroupRemove(), style: 'destructive' },
             ]);
